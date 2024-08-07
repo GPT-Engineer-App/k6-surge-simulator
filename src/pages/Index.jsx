@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Cat, Heart, Info, Paw, Star, ChevronLeft, ChevronRight } from "lucide-react";
+import { Cat, Heart, Info, Paw, Star, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,6 +9,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Progress } from "@/components/ui/progress";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useToast } from "@/components/ui/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const catBreeds = [
   { name: "Siamese", origin: "Thailand", temperament: "Vocal, Affectionate, Intelligent", rating: 4.5, image: "https://upload.wikimedia.org/wikipedia/commons/2/25/Siam_lilacpoint.jpg" },
@@ -19,25 +21,30 @@ const catBreeds = [
 ];
 
 const CatCard = ({ breed, origin, temperament, rating, image }) => (
-  <Card className="mb-4 hover:shadow-lg transition-all duration-300 transform hover:scale-105">
-    <CardHeader>
-      <img src={image} alt={breed} className="w-full h-48 object-cover rounded-t-lg" />
-      <CardTitle className="flex items-center justify-between mt-2">
-        {breed}
-        <Badge variant="secondary" className="ml-2">
-          <Star className="w-4 h-4 mr-1 inline" />
-          {rating.toFixed(1)}
-        </Badge>
-      </CardTitle>
-      <CardDescription>Origin: {origin}</CardDescription>
-    </CardHeader>
-    <CardContent>
-      <p><strong>Temperament:</strong> {temperament}</p>
-      <div className="mt-2">
-        <Progress value={rating * 20} className="w-full" />
-      </div>
-    </CardContent>
-  </Card>
+  <motion.div
+    whileHover={{ scale: 1.05 }}
+    whileTap={{ scale: 0.95 }}
+  >
+    <Card className="mb-4 overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100 shadow-lg">
+      <CardHeader className="relative p-0">
+        <img src={image} alt={breed} className="w-full h-56 object-cover" />
+        <div className="absolute top-0 right-0 m-2">
+          <Badge variant="secondary" className="bg-purple-500 text-white">
+            <Star className="w-4 h-4 mr-1 inline" />
+            {rating.toFixed(1)}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="p-4">
+        <CardTitle className="text-2xl font-bold text-purple-700">{breed}</CardTitle>
+        <CardDescription className="text-pink-600">Origin: {origin}</CardDescription>
+        <p className="mt-2"><strong>Temperament:</strong> {temperament}</p>
+        <div className="mt-3">
+          <Progress value={rating * 20} className="w-full h-2 bg-pink-200" indicatorClassName="bg-gradient-to-r from-purple-500 to-pink-500" />
+        </div>
+      </CardContent>
+    </Card>
+  </motion.div>
 );
 
 const FactCard = ({ fact }) => (
@@ -66,6 +73,7 @@ const catFacts = [
 const Index = () => {
   const [likes, setLikes] = useState(0);
   const [currentFactIndex, setCurrentFactIndex] = useState(0);
+  const [showAlert, setShowAlert] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -82,6 +90,9 @@ const Index = () => {
       description: `You've liked cats ${likes + 1} times.`,
       duration: 3000,
     });
+    if (likes + 1 === 10) {
+      setShowAlert(true);
+    }
   };
 
   return (
@@ -101,10 +112,13 @@ const Index = () => {
             {catBreeds.map((breed, index) => (
               <CarouselItem key={index}>
                 <div className="p-1">
-                  <Card>
-                    <CardContent className="flex aspect-square items-center justify-center p-6">
-                      <img src={breed.image} alt={breed.name} className="w-full h-full object-cover rounded-lg" />
+                  <Card className="overflow-hidden">
+                    <CardContent className="flex aspect-square items-center justify-center p-0">
+                      <img src={breed.image} alt={breed.name} className="w-full h-full object-cover" />
                     </CardContent>
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
+                      <h3 className="text-white text-xl font-bold">{breed.name}</h3>
+                    </div>
                   </Card>
                 </div>
               </CarouselItem>
@@ -133,21 +147,27 @@ const Index = () => {
                 <p className="text-xl text-gray-700 mb-4">
                   Cats are fascinating creatures that have been domesticated for thousands of years. They are known for their independence, agility, and affectionate nature.
                 </p>
-                <h3 className="text-2xl font-semibold mb-3 text-purple-600">Characteristics of Cats</h3>
-                <ul className="list-none mb-4 text-gray-700">
-                  {["Excellent hunters with sharp claws and teeth", "Flexible bodies and quick reflexes", "Keen senses, especially their night vision", "Soft fur and a variety of coat patterns", "Communicate through meowing, purring, and body language"].map((trait, index) => (
-                    <motion.li 
-                      key={index}
-                      className="mb-2 flex items-center"
-                      initial={{ opacity: 0, x: -50 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.5, delay: index * 0.1 }}
-                    >
-                      <Badge variant="outline" className="mr-2 bg-pink-100"><Paw className="w-4 h-4" /></Badge>
-                      {trait}
-                    </motion.li>
-                  ))}
-                </ul>
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="characteristics">
+                    <AccordionTrigger className="text-2xl font-semibold text-purple-600">Characteristics of Cats</AccordionTrigger>
+                    <AccordionContent>
+                      <ul className="list-none mb-4 text-gray-700">
+                        {["Excellent hunters with sharp claws and teeth", "Flexible bodies and quick reflexes", "Keen senses, especially their night vision", "Soft fur and a variety of coat patterns", "Communicate through meowing, purring, and body language"].map((trait, index) => (
+                          <motion.li 
+                            key={index}
+                            className="mb-2 flex items-center"
+                            initial={{ opacity: 0, x: -50 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.5, delay: index * 0.1 }}
+                          >
+                            <Badge variant="outline" className="mr-2 bg-pink-100"><Paw className="w-4 h-4" /></Badge>
+                            {trait}
+                          </motion.li>
+                        ))}
+                      </ul>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </CardContent>
             </Card>
           </TabsContent>
@@ -168,20 +188,32 @@ const Index = () => {
         </Tabs>
 
         <div className="flex justify-center items-center space-x-4 mb-6">
-          <Button 
-            variant="outline" 
-            onClick={handleLike}
-            className="flex items-center bg-pink-500 text-white hover:bg-pink-600 transition-all duration-300 transform hover:scale-105"
+          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+            <Button 
+              variant="outline" 
+              onClick={handleLike}
+              className="flex items-center bg-pink-500 text-white hover:bg-pink-600 transition-all duration-300"
+            >
+              <Heart className="mr-2 h-4 w-4" /> Like
+            </Button>
+          </motion.div>
+          <motion.span 
+            className="text-2xl font-bold text-pink-500"
+            key={likes}
+            initial={{ scale: 1.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 500, damping: 15 }}
           >
-            <Heart className="mr-2 h-4 w-4" /> Like
-          </Button>
-          <span className="text-2xl font-bold text-pink-500">{likes}</span>
+            {likes}
+          </motion.span>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" size="icon" className="bg-purple-500 text-white hover:bg-purple-600 transition-all duration-300 transform hover:scale-105">
-                  <Info className="h-4 w-4" />
-                </Button>
+                <motion.div whileHover={{ rotate: 360 }} transition={{ duration: 0.5 }}>
+                  <Button variant="outline" size="icon" className="bg-purple-500 text-white hover:bg-purple-600 transition-all duration-300">
+                    <Info className="h-4 w-4" />
+                  </Button>
+                </motion.div>
               </TooltipTrigger>
               <TooltipContent>
                 <p>Show your love for cats!</p>
@@ -189,6 +221,16 @@ const Index = () => {
             </Tooltip>
           </TooltipProvider>
         </div>
+
+        {showAlert && (
+          <Alert className="mb-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+            <Sparkles className="h-4 w-4" />
+            <AlertTitle>Wow! You're a true cat lover!</AlertTitle>
+            <AlertDescription>
+              You've liked cats 10 times. Keep spreading the love!
+            </AlertDescription>
+          </Alert>
+        )}
 
         <motion.p 
           className="text-lg text-gray-700 text-center italic"
