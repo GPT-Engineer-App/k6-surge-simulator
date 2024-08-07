@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Cat, Heart, Info, Paw, Star } from "lucide-react";
+import { Cat, Heart, Info, Paw, Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,19 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Progress } from "@/components/ui/progress";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { useToast } from "@/components/ui/use-toast";
 
 const catBreeds = [
-  { name: "Siamese", origin: "Thailand", temperament: "Vocal, Affectionate, Intelligent", rating: 4.5 },
-  { name: "Persian", origin: "Iran", temperament: "Gentle, Quiet, Docile", rating: 4.2 },
-  { name: "Maine Coon", origin: "United States", temperament: "Gentle, Intelligent, Independent", rating: 4.8 },
-  { name: "Bengal", origin: "United States", temperament: "Energetic, Playful, Curious", rating: 4.6 },
-  { name: "Scottish Fold", origin: "Scotland", temperament: "Sweet-tempered, Intelligent, Soft-voiced", rating: 4.3 },
+  { name: "Siamese", origin: "Thailand", temperament: "Vocal, Affectionate, Intelligent", rating: 4.5, image: "https://upload.wikimedia.org/wikipedia/commons/2/25/Siam_lilacpoint.jpg" },
+  { name: "Persian", origin: "Iran", temperament: "Gentle, Quiet, Docile", rating: 4.2, image: "https://upload.wikimedia.org/wikipedia/commons/1/15/White_Persian_Cat.jpg" },
+  { name: "Maine Coon", origin: "United States", temperament: "Gentle, Intelligent, Independent", rating: 4.8, image: "https://upload.wikimedia.org/wikipedia/commons/5/5f/Maine_Coon_cat_by_Tomitheos.JPG" },
+  { name: "Bengal", origin: "United States", temperament: "Energetic, Playful, Curious", rating: 4.6, image: "https://upload.wikimedia.org/wikipedia/commons/b/ba/Paintedcats_Red_Star_standing.jpg" },
+  { name: "Scottish Fold", origin: "Scotland", temperament: "Sweet-tempered, Intelligent, Soft-voiced", rating: 4.3, image: "https://upload.wikimedia.org/wikipedia/commons/5/5d/Adult_Scottish_Fold.jpg" },
 ];
 
-const CatCard = ({ breed, origin, temperament, rating }) => (
-  <Card className="mb-4 hover:shadow-lg transition-shadow duration-300">
+const CatCard = ({ breed, origin, temperament, rating, image }) => (
+  <Card className="mb-4 hover:shadow-lg transition-all duration-300 transform hover:scale-105">
     <CardHeader>
-      <CardTitle className="flex items-center justify-between">
+      <img src={image} alt={breed} className="w-full h-48 object-cover rounded-t-lg" />
+      <CardTitle className="flex items-center justify-between mt-2">
         {breed}
         <Badge variant="secondary" className="ml-2">
           <Star className="w-4 h-4 mr-1 inline" />
@@ -63,6 +66,7 @@ const catFacts = [
 const Index = () => {
   const [likes, setLikes] = useState(0);
   const [currentFactIndex, setCurrentFactIndex] = useState(0);
+  const { toast } = useToast();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -70,6 +74,15 @@ const Index = () => {
     }, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleLike = () => {
+    setLikes(likes + 1);
+    toast({
+      title: "Thanks for your love!",
+      description: `You've liked cats ${likes + 1} times.`,
+      duration: 3000,
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-100 to-pink-100 p-8">
@@ -83,26 +96,23 @@ const Index = () => {
           <Cat className="mr-2 text-pink-500" /> All About Cats
         </motion.h1>
         
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="relative"
-        >
-          <img
-            src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/1200px-Cat03.jpg"
-            alt="A cute cat"
-            className="mx-auto object-cover w-full h-[400px] rounded-lg shadow-lg mb-6"
-          />
-          <motion.div
-            className="absolute bottom-4 left-4 bg-white bg-opacity-80 p-2 rounded-lg"
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5 }}
-          >
-            <p className="text-sm font-semibold text-purple-800">Photo: A curious cat</p>
-          </motion.div>
-        </motion.div>
+        <Carousel className="mb-8">
+          <CarouselContent>
+            {catBreeds.map((breed, index) => (
+              <CarouselItem key={index}>
+                <div className="p-1">
+                  <Card>
+                    <CardContent className="flex aspect-square items-center justify-center p-6">
+                      <img src={breed.image} alt={breed.name} className="w-full h-full object-cover rounded-lg" />
+                    </CardContent>
+                  </Card>
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious />
+          <CarouselNext />
+        </Carousel>
 
         <AnimatePresence mode="wait">
           <FactCard key={currentFactIndex} fact={catFacts[currentFactIndex]} />
@@ -160,8 +170,8 @@ const Index = () => {
         <div className="flex justify-center items-center space-x-4 mb-6">
           <Button 
             variant="outline" 
-            onClick={() => setLikes(likes + 1)}
-            className="flex items-center bg-pink-500 text-white hover:bg-pink-600"
+            onClick={handleLike}
+            className="flex items-center bg-pink-500 text-white hover:bg-pink-600 transition-all duration-300 transform hover:scale-105"
           >
             <Heart className="mr-2 h-4 w-4" /> Like
           </Button>
@@ -169,7 +179,7 @@ const Index = () => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" size="icon" className="bg-purple-500 text-white hover:bg-purple-600">
+                <Button variant="outline" size="icon" className="bg-purple-500 text-white hover:bg-purple-600 transition-all duration-300 transform hover:scale-105">
                   <Info className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
