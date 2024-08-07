@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { Cat, Heart, Info, Paw, Star, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { Cat, Heart, Info, Paw, Star, ChevronLeft, ChevronRight, Sparkles, Camera, Download } from "lucide-react";
+import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,10 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toPng } from 'html-to-image';
 
 const catBreeds = [
   { name: "Siamese", origin: "Thailand", temperament: "Vocal, Affectionate, Intelligent", rating: 4.5, image: "https://upload.wikimedia.org/wikipedia/commons/2/25/Siam_lilacpoint.jpg" },
@@ -18,7 +22,66 @@ const catBreeds = [
   { name: "Maine Coon", origin: "United States", temperament: "Gentle, Intelligent, Independent", rating: 4.8, image: "https://upload.wikimedia.org/wikipedia/commons/5/5f/Maine_Coon_cat_by_Tomitheos.JPG" },
   { name: "Bengal", origin: "United States", temperament: "Energetic, Playful, Curious", rating: 4.6, image: "https://upload.wikimedia.org/wikipedia/commons/b/ba/Paintedcats_Red_Star_standing.jpg" },
   { name: "Scottish Fold", origin: "Scotland", temperament: "Sweet-tempered, Intelligent, Soft-voiced", rating: 4.3, image: "https://upload.wikimedia.org/wikipedia/commons/5/5d/Adult_Scottish_Fold.jpg" },
+  { name: "Sphynx", origin: "Canada", temperament: "Energetic, Mischievous, Intelligent", rating: 4.7, image: "https://upload.wikimedia.org/wikipedia/commons/e/e8/Sphinx2_July_2006.jpg" },
+  { name: "Russian Blue", origin: "Russia", temperament: "Gentle, Quiet, Intelligent", rating: 4.4, image: "https://upload.wikimedia.org/wikipedia/commons/0/0c/Russian_Blue_001.gif" },
 ];
+
+const CatQuiz = ({ onComplete }) => {
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [score, setScore] = useState(0);
+  const questions = [
+    {
+      question: "Which cat breed is known for its lack of fur?",
+      options: ["Persian", "Sphynx", "Maine Coon", "Siamese"],
+      correctAnswer: "Sphynx"
+    },
+    {
+      question: "What is a group of cats called?",
+      options: ["Herd", "Pack", "Clowder", "Flock"],
+      correctAnswer: "Clowder"
+    },
+    {
+      question: "Which cat breed is known for its folded ears?",
+      options: ["Scottish Fold", "Russian Blue", "Bengal", "Siamese"],
+      correctAnswer: "Scottish Fold"
+    }
+  ];
+
+  const handleAnswer = (selectedAnswer) => {
+    if (selectedAnswer === questions[currentQuestion].correctAnswer) {
+      setScore(score + 1);
+    }
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+    } else {
+      onComplete(score + (selectedAnswer === questions[currentQuestion].correctAnswer ? 1 : 0));
+    }
+  };
+
+  return (
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader>
+        <CardTitle>Cat Quiz</CardTitle>
+        <CardDescription>Question {currentQuestion + 1} of {questions.length}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <h3 className="text-lg font-semibold mb-4">{questions[currentQuestion].question}</h3>
+        <div className="space-y-2">
+          {questions[currentQuestion].options.map((option, index) => (
+            <Button
+              key={index}
+              onClick={() => handleAnswer(option)}
+              className="w-full justify-start text-left"
+              variant="outline"
+            >
+              {option}
+            </Button>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 const CatCard = ({ breed, origin, temperament, rating, image }) => (
   <motion.div
@@ -74,7 +137,12 @@ const Index = () => {
   const [likes, setLikes] = useState(0);
   const [currentFactIndex, setCurrentFactIndex] = useState(0);
   const [showAlert, setShowAlert] = useState(false);
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [quizScore, setQuizScore] = useState(null);
+  const [catName, setCatName] = useState("");
   const { toast } = useToast();
+  const cardRef = useRef(null);
+  const controls = useAnimation();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -85,6 +153,10 @@ const Index = () => {
 
   const handleLike = () => {
     setLikes(likes + 1);
+    controls.start({
+      scale: [1, 1.2, 1],
+      transition: { duration: 0.3 }
+    });
     toast({
       title: "Thanks for your love!",
       description: `You've liked cats ${likes + 1} times.`,
@@ -92,6 +164,31 @@ const Index = () => {
     });
     if (likes + 1 === 10) {
       setShowAlert(true);
+    }
+  };
+
+  const handleQuizComplete = (score) => {
+    setQuizScore(score);
+    setShowQuiz(false);
+    toast({
+      title: "Quiz Completed!",
+      description: `You scored ${score} out of 3!`,
+      duration: 5000,
+    });
+  };
+
+  const handleDownload = async () => {
+    if (cardRef.current === null) {
+      return
+    }
+    try {
+      const dataUrl = await toPng(cardRef.current, { cacheBust: true, })
+      const link = document.createElement('a')
+      link.download = 'my-cat-card.png'
+      link.href = dataUrl
+      link.click()
+    } catch (err) {
+      console.error(err)
     }
   };
 
@@ -106,6 +203,40 @@ const Index = () => {
         >
           <Cat className="mr-2 text-pink-500" /> All About Cats
         </motion.h1>
+
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="mb-4">Create Your Cat Card</Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Create Your Cat Card</DialogTitle>
+              <DialogDescription>
+                Enter your cat's name to create a personalized cat card.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">
+                  Name
+                </Label>
+                <Input
+                  id="name"
+                  value={catName}
+                  onChange={(e) => setCatName(e.target.value)}
+                  className="col-span-3"
+                />
+              </div>
+            </div>
+            <Button onClick={handleDownload} disabled={!catName}>Download Cat Card</Button>
+          </DialogContent>
+        </Dialog>
+
+        <div ref={cardRef} className="bg-white p-6 rounded-lg shadow-lg mb-6">
+          <h2 className="text-2xl font-bold mb-2">{catName || "Your Cat"}</h2>
+          <img src="https://placekitten.com/300/200" alt="Random cat" className="w-full h-auto rounded-lg mb-4" />
+          <p className="text-gray-600">A purr-fect companion!</p>
+        </div>
         
         <Carousel className="mb-8">
           <CarouselContent>
@@ -201,8 +332,7 @@ const Index = () => {
             className="text-2xl font-bold text-pink-500"
             key={likes}
             initial={{ scale: 1.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 500, damping: 15 }}
+            animate={controls}
           >
             {likes}
           </motion.span>
@@ -228,6 +358,26 @@ const Index = () => {
             <AlertTitle>Wow! You're a true cat lover!</AlertTitle>
             <AlertDescription>
               You've liked cats 10 times. Keep spreading the love!
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {!showQuiz && quizScore === null && (
+          <Button onClick={() => setShowQuiz(true)} className="mb-6">
+            Take Cat Quiz
+          </Button>
+        )}
+
+        {showQuiz && (
+          <CatQuiz onComplete={handleQuizComplete} />
+        )}
+
+        {quizScore !== null && (
+          <Alert className="mb-6 bg-gradient-to-r from-green-500 to-blue-500 text-white">
+            <Sparkles className="h-4 w-4" />
+            <AlertTitle>Quiz Results</AlertTitle>
+            <AlertDescription>
+              You scored {quizScore} out of 3! {quizScore === 3 ? "Purr-fect!" : "Keep learning about cats!"}
             </AlertDescription>
           </Alert>
         )}
